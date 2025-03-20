@@ -1,49 +1,62 @@
 import io
 import qrcode
 from flask import Flask, request, send_file, jsonify, render_template_string
+import webbrowser
+from threading import Timer
 
 app = Flask(__name__)
 
-# UI route to display the form
+# UI route to display the form with a nicer GUI using Bootstrap
 @app.route('/')
 def index():
-    # Using render_template_string for simplicity.
-    # In a larger project, you might use separate HTML template files.
     return render_template_string('''
     <!DOCTYPE html>
     <html lang="en">
     <head>
-        <meta charset="UTF-8">
-        <title>QR Code Generator</title>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>QR Code Generator</title>
+      <!-- Bootstrap CSS -->
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+      <style>
+        body { background-color: #f8f9fa; }
+        .container { max-width: 600px; margin-top: 50px; }
+        .qr-code { margin-top: 20px; }
+      </style>
     </head>
     <body>
-        <h1>QR Code Generator</h1>
-        <form id="qrForm">
-            <input type="text" id="urlInput" placeholder="Enter URL here" required style="width:300px;">
-            <button type="submit">Generate QR Code</button>
+      <div class="container text-center">
+        <h1 class="mb-4">QR Code Generator</h1>
+        <form id="qrForm" class="mb-4">
+          <div class="input-group">
+            <input type="text" id="urlInput" class="form-control" placeholder="Enter URL here" required>
+            <button type="submit" class="btn btn-primary">Generate QR Code</button>
+          </div>
         </form>
-        <br>
-        <div id="qrContainer" style="display: none;">
-            <h2>Your QR Code:</h2>
-            <img id="qrImage" src="" alt="QR Code">
+        <div id="qrContainer" class="qr-code" style="display: none;">
+          <h2>Your QR Code:</h2>
+          <img id="qrImage" src="" alt="QR Code" class="img-fluid">
         </div>
-        <script>
-            document.getElementById('qrForm').addEventListener('submit', function(event) {
-                event.preventDefault();
-                const url = document.getElementById('urlInput').value;
-                if(url) {
-                    // Update the image src with the /generate endpoint and the URL as query parameter
-                    const qrImage = document.getElementById('qrImage');
-                    qrImage.src = '/generate?url=' + encodeURIComponent(url);
-                    document.getElementById('qrContainer').style.display = 'block';
-                }
-            });
-        </script>
+      </div>
+      <!-- JavaScript to handle form submission -->
+      <script>
+        document.getElementById('qrForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const url = document.getElementById('urlInput').value;
+            if(url) {
+                const qrImage = document.getElementById('qrImage');
+                qrImage.src = '/generate?url=' + encodeURIComponent(url);
+                document.getElementById('qrContainer').style.display = 'block';
+            }
+        });
+      </script>
+      <!-- Bootstrap Bundle with Popper -->
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     </body>
     </html>
     ''')
 
-# QR generation endpoint (same as before, with customization options if needed)
+# QR generation endpoint
 @app.route('/generate', methods=['GET'])
 def generate_qr():
     # Extract URL from query parameters
@@ -91,4 +104,11 @@ def generate_qr():
     return send_file(buf, mimetype='image/png')
 
 if __name__ == '__main__':
+    # Function to open the browser after a short delay
+    def open_browser():
+        webbrowser.open("http://127.0.0.1:5000")
+    
+    # Start a timer to open the browser 1 second after the server starts
+    Timer(1, open_browser).start()
+    
     app.run(debug=True)
